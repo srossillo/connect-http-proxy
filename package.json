@@ -1,0 +1,52 @@
+{
+  "name": "connect-http-proxy",
+  "version": "1.0.0-alpha.0",
+  "description": "Express/Connect HTTP proxy middleware",
+  "main": "index.js",
+  "scripts": {
+    "coverage": "istanbul cover test/proxy-spec.js",
+    "lint": "eslint --ignore-path .gitignore .",
+    "test": "tape test/proxy-spec.js | tap-spec"
+  },
+  "keywords": [
+    "express",
+    "connect",
+    "proxy",
+    "http",
+    "https"
+  ],
+  "files": [
+    "lib"
+  ],
+  "author": {
+    "name": "Scott Rossillo",
+    "url": "https://github.com/foo4u"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/foo4u/connect-http-proxy.git"
+  },
+  "bugs": "https://github.com/foo4u/connect-http-proxy/issues",
+  "peerDependencies": {
+    "express": "4.x"
+  },
+  "devDependencies": {
+    "blue-tape": "^1.0.0",
+    "body-parser": "^1.18.2",
+    "eslint": "^4.15.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-fp": "^2.3.0",
+    "eslint-plugin-import": "^2.8.0",
+    "express": "^4.16.2",
+    "form-data": "^2.3.1",
+    "istanbul": "^0.4.5",
+    "multer": "^1.3.0",
+    "node-fetch": "^1.7.3",
+    "pino": "^4.10.3",
+    "server-destroy": "^1.0.1",
+    "tap-spec": "^4.1.1",
+    "tape": "^4.8.0"
+  },
+  "dependencies": {}
+}
