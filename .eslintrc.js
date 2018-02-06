@@ -1,8 +1,9 @@
 module.exports = {
     extends: [
-        "airbnb-base"
+        "airbnb-base",
+        "plugin:security/recommended"
     ],
-    plugins: ["import", "fp"],
+    plugins: ["import", "fp", "security"],
     rules: {
         "comma-dangle": ["error", "never"],
         "no-confusing-arrow": "off",
