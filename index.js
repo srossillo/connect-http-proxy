@@ -39,6 +39,10 @@ class HttpProxy {
         return agent;
     }
 
+    createProxyUrl(req) {
+        return req.url;
+    }
+
     copyRequestHeaders(req, proxyReq) {
         Object.keys(req.headers).forEach((k) => {
             proxyReq.setHeader(k, req.header(k));
@@ -62,7 +66,7 @@ class HttpProxy {
             this.logger.debug(`Proxying ${req.url}`);
 
             const options = Object.assign({}, this.options, {
-                path: req.url,
+                path: this.createProxyUrl(req),
                 method: req.method
             });
 
