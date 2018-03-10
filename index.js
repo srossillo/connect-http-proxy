@@ -81,14 +81,6 @@ class HttpProxy {
                 });
             });
 
-            proxyReq.on("socket", (sock) => {
-                sock.on("close", (closedWithError) => {
-                    if (closedWithError) {
-                        this.logger.error(`Socket closed with error for ${req.url}`);
-                    }
-                });
-            });
-
             proxyReq.on("timeout", () => {
                 next(new Error(`Upstream timeout for ${req.url}`));
             });
