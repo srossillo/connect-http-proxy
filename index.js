@@ -81,11 +81,11 @@ class HttpProxy {
                 });
             });
 
-            proxyReq.on("timeout", () => {
+            proxyReq.once("timeout", () => {
                 next(new Error(`Upstream timeout for ${req.url}`));
             });
 
-            proxyReq.on("error", (err) => {
+            proxyReq.once("error", (err) => {
                 next(err);
             });
 
