@@ -57,7 +57,7 @@ class HttpProxy {
     processRequestHeaders() {
     }
 
-    filterResponseHeaders(headers) {
+    filterResponseHeaders(req, headers) {
         return headers;
     }
 
@@ -74,7 +74,7 @@ class HttpProxy {
                 res.status(proxyRes.statusCode);
                 this.copyResponseHeaders(
                     res,
-                    this.filterResponseHeaders(proxyRes.headers)
+                    this.filterResponseHeaders(req, proxyRes.headers)
                 );
                 proxyRes.pipe(res, {
                     end: true
