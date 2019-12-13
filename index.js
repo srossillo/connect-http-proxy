@@ -63,7 +63,7 @@ class HttpProxy {
 
     handle() {
         return ((req, res, next) => {
-            this.logger.debug(`Proxying ${req.url}`);
+            this.logger.info(`Proxying ${req.url}`);
 
             const options = Object.assign({}, this.options, {
                 path: this.createProxyUrl(req),
