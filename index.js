@@ -82,7 +82,7 @@ class HttpProxy {
             });
 
             proxyReq.once("timeout", () => {
-                next(new Error(`Upstream timeout for ${req.url}`));
+                next(new Error(`Upstream timeout for ${req.url}, requestId: ${requestId}`));
             });
 
             proxyReq.once("error", (err) => {
@@ -91,10 +91,28 @@ class HttpProxy {
 
             this.copyRequestHeaders(req, proxyReq);
             this.processRequestHeaders(req, proxyReq);
+            const requestId = proxyReq.getHeader("x-sl-requestid");
+            this.logRequestEvents(proxyReq, this.logger.child({ requestId }));
+
             req.pipe(proxyReq, {
                 end: true
             });
         });
+    }
+
+    logRequestEvents(req, logger) {
+        req.once("socket", (socket) => {
+            logger.info("Socket created");
+            socket.once("lookup", () => {
+                logger.info("DNS Lookup finished");
+            });
+            socket.once("connect", () => {
+                logger.info("Connection established");
+            });
+            socket.once("secureConnect", () => {
+                logger.info("TLS handshake completed");
+            });
+        }) 
     }
 }
 
