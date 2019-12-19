@@ -25,12 +25,14 @@ let backend;
 let app;
 const info = message => ({ message, level: "info" });
 const debug = message => ({ message, level: "debug" });
+const error = message => ({ message, level: "error" });
 const logger = {
-    setStorage: storage => logger.storage = storage,
-    info: (message) => logger.storage.push(info(message)),
-    debug: (message) => logger.storage.push(debug(message)),
+    setStorage: (storage) => { logger.storage = storage; },
+    info: message => logger.storage.push(info(message)),
+    debug: message => logger.storage.push(debug(message)),
+    error: message => logger.storage.push(error(message)),
     child: () => logger
-}
+};
 
 test("setup", (t) => {
     logger.setStorage([]);
@@ -53,6 +55,7 @@ test("Should proxy a get route", (t) => {
             t.equal(body.message, "foobar");
             t.deepEqual(logs, [
                 info('Proxying /foo'),
+                info('Listening for request events'),
                 info('Socket created'),
                 info('DNS Lookup finished'),
                 info('Connection established')
@@ -76,6 +79,7 @@ test("Should proxy get with query string", (t) => {
             t.equal(body.bar, bar);
             t.deepEqual(logs, [
                 info('Proxying /query?foo=aFoo&bar=aBar'),
+                info('Listening for request events'),
                 info('Socket created'),
                 info('DNS Lookup finished'),
                 info('Connection established')
@@ -109,6 +113,7 @@ test("Should proxy post with mutlipart form data", (t) => {
             t.equal(body.bar, bar, "Posted field bar should be echoed back");
             t.deepEqual(logs, [
                 info('Proxying /multipart-form-upload'),
+                info('Listening for request events'),
                 info('Socket created'),
                 info('DNS Lookup finished'),
                 info('Connection established')
@@ -142,6 +147,7 @@ test("Should proxy post with url-encoded form data", (t) => {
             t.equal(body.bar, bar, "Posted field bar should be echoed back");
             t.deepEqual(logs, [
                 info('Proxying /urlencoded-form-upload'),
+                info('Listening for request events'),
                 info('Socket created'),
                 info('DNS Lookup finished'),
                 info('Connection established')
@@ -165,9 +171,11 @@ test("Should handle upstream hangup", (t) => {
             t.equal("socket hang up", body.error, "Expected socket hang up");
             t.deepEqual(logs, [
                 info('Proxying /file'),
+                info('Listening for request events'),
                 info('Socket created'),
                 info('DNS Lookup finished'),
-                info('Connection established')
+                info('Connection established'),
+                error('Async error while proxying /file: Error: socket hang up')
             ]);
         })
         .catch((err) => {
