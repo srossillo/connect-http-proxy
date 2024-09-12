@@ -70,31 +70,56 @@ class HttpProxy {
                 method: req.method
             });
 
-            const proxyReq = this.http.request(options, (proxyRes) => {
-                res.status(proxyRes.statusCode);
-                this.copyResponseHeaders(
-                    res,
-                    this.filterResponseHeaders(req, proxyRes.headers)
-                );
-                proxyRes.pipe(res, {
+            try {
+                const proxyReq = this.http.request(options, (proxyRes) => {
+                    res.status(proxyRes.statusCode);
+                    this.copyResponseHeaders(
+                        res,
+                        this.filterResponseHeaders(req, proxyRes.headers)
+                    );
+                    proxyRes.pipe(res, {
+                        end: true
+                    });
+                });
+
+                proxyReq.once("timeout", () => {
+                    next(new Error(`Upstream timeout for ${req.url}, requestId: ${requestId}`));
+                });
+
+                proxyReq.once("error", (err) => {
+                    this.logger.error(`Async error while proxying ${req.url}: ${err}`);
+                    next(err);
+                });
+
+                this.copyRequestHeaders(req, proxyReq);
+                this.processRequestHeaders(req, proxyReq);
+                const requestId = proxyReq.getHeader("x-sl-requestid");
+                this.logRequestEvents(proxyReq, this.logger.child({ requestId }));
+
+                req.pipe(proxyReq, {
                     end: true
                 });
-            });
-
-            proxyReq.once("timeout", () => {
-                next(new Error(`Upstream timeout for ${req.url}`));
-            });
-
-            proxyReq.once("error", (err) => {
-                next(err);
-            });
-
-            this.copyRequestHeaders(req, proxyReq);
-            this.processRequestHeaders(req, proxyReq);
-            req.pipe(proxyReq, {
-                end: true
-            });
+            } catch (error) {
+                this.logger.error(`Synchronous error while proxying ${req.url}: ${error}`);
+                throw error;
+            }
         });
+    }
+
+    logRequestEvents(req, logger) {
+        logger.info("Listening for request events");
+        req.once("socket", (socket) => {
+            logger.info("Socket created");
+            socket.once("lookup", () => {
+                logger.info("DNS Lookup finished");
+            });
+            socket.once("connect", () => {
+                logger.info("Connection established");
+            });
+            socket.once("secureConnect", () => {
+                logger.info("TLS handshake completed");
+            });
+        }) 
     }
 }
 

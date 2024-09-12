@@ -19,26 +19,47 @@ const HttpProxy = require("../index");
 const test = require("blue-tape");
 const fetch = require("node-fetch");
 const FormData = require("form-data");
+const EventEmitter = require("events");
 
 let backend;
 let app;
+const info = message => ({ message, level: "info" });
+const debug = message => ({ message, level: "debug" });
+const error = message => ({ message, level: "error" });
+const logger = {
+    setStorage: (storage) => { logger.storage = storage; },
+    info: message => logger.storage.push(info(message)),
+    debug: message => logger.storage.push(debug(message)),
+    error: message => logger.storage.push(error(message)),
+    child: () => logger
+};
 
 test("setup", (t) => {
+    logger.setStorage([]);
     backend = new BackendApp();
     app = new App(new HttpProxy({
         hostname: "localhost",
         protocol: "http:",
         port: backend.port
-    }));
+    }, logger));
     t.end();
 });
 
 test("Should proxy a get route", (t) => {
-    t.plan(1);
+    t.plan(2);
+    const logs = [];
+    logger.setStorage(logs);
     return fetch(`http://localhost:${app.port}/proxy/foo`)
         .then(res => res.json())
         .then((body) => {
             t.equal(body.message, "foobar");
+            t.deepEqual(logs, [
+                info('Proxying /foo'),
+                info('Listening for request events'),
+                info('Socket created'),
+                info('DNS Lookup finished'),
+                info('Connection established')
+            ]);
         })
         .catch((err) => {
             t.fail(err);
@@ -46,14 +67,23 @@ test("Should proxy a get route", (t) => {
 });
 
 test("Should proxy get with query string", (t) => {
-    t.plan(2);
+    t.plan(3);
     const foo = "aFoo";
     const bar = "aBar";
+    const logs = [];
+    logger.setStorage(logs);
     return fetch(`http://localhost:${app.port}/proxy/query?foo=${foo}&bar=${bar}`)
         .then(res => res.json())
         .then((body) => {
             t.equal(body.foo, foo);
             t.equal(body.bar, bar);
+            t.deepEqual(logs, [
+                info('Proxying /query?foo=aFoo&bar=aBar'),
+                info('Listening for request events'),
+                info('Socket created'),
+                info('DNS Lookup finished'),
+                info('Connection established')
+            ]);
         })
         .catch((err) => {
             t.fail(err);
@@ -61,13 +91,16 @@ test("Should proxy get with query string", (t) => {
 });
 
 test("Should proxy post with mutlipart form data", (t) => {
-    t.plan(2);
+    t.plan(3);
     const form = new FormData();
     const foo = "aFoo";
     const bar = "aBar";
 
     form.append("foo", foo);
     form.append("bar", bar);
+
+    const logs = [];
+    logger.setStorage(logs);
 
     return fetch(`http://localhost:${app.port}/proxy/multipart-form-upload`, {
         method: "POST",
@@ -78,6 +111,13 @@ test("Should proxy post with mutlipart form data", (t) => {
         .then((body) => {
             t.equal(body.foo, foo, "Posted field foo should be echoed back");
             t.equal(body.bar, bar, "Posted field bar should be echoed back");
+            t.deepEqual(logs, [
+                info('Proxying /multipart-form-upload'),
+                info('Listening for request events'),
+                info('Socket created'),
+                info('DNS Lookup finished'),
+                info('Connection established')
+            ]);
         })
         .catch((err) => {
             t.fail(err);
@@ -85,10 +125,13 @@ test("Should proxy post with mutlipart form data", (t) => {
 });
 
 test("Should proxy post with url-encoded form data", (t) => {
-    t.plan(2);
+    t.plan(3);
     const foo = "aFoo";
     const bar = "aBar";
     const form = `foo=${foo}&bar=${bar}`;
+
+    const logs = [];
+    logger.setStorage(logs);
 
     return fetch(`http://localhost:${app.port}/proxy/urlencoded-form-upload`, {
         method: "POST",
@@ -102,6 +145,13 @@ test("Should proxy post with url-encoded form data", (t) => {
         .then((body) => {
             t.equal(body.foo, foo, "Posted field foo should be echoed back");
             t.equal(body.bar, bar, "Posted field bar should be echoed back");
+            t.deepEqual(logs, [
+                info('Proxying /urlencoded-form-upload'),
+                info('Listening for request events'),
+                info('Socket created'),
+                info('DNS Lookup finished'),
+                info('Connection established')
+            ]);
         })
         .catch((err) => {
             t.fail(err);
@@ -109,7 +159,9 @@ test("Should proxy post with url-encoded form data", (t) => {
 });
 
 test("Should handle upstream hangup", (t) => {
-    t.plan(2);
+    t.plan(3);
+    const logs = [];
+    logger.setStorage(logs);
     return fetch(`http://localhost:${app.port}/proxy/file`)
         .then((res) => {
             t.equal(502, res.status);
@@ -117,6 +169,14 @@ test("Should handle upstream hangup", (t) => {
         })
         .then((body) => {
             t.equal("socket hang up", body.error, "Expected socket hang up");
+            t.deepEqual(logs, [
+                info('Proxying /file'),
+                info('Listening for request events'),
+                info('Socket created'),
+                info('DNS Lookup finished'),
+                info('Connection established'),
+                error('Async error while proxying /file: Error: socket hang up')
+            ]);
         })
         .catch((err) => {
             t.fail(err);
